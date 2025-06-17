@@ -1,6 +1,5 @@
 [build]
   command = "npm run build"
-  publish = ".next"
 
 [functions]
   node_bundler = "esbuild"
@@ -13,14 +12,5 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Redirect all requests to Next.js for proper routing
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/___netlify-handler"
-  status = 200
-
-# Handle API routes properly
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/___netlify-handler"
-  status = 200
+# The @netlify/plugin-nextjs plugin handles routing automatically
+# Remove manual redirects as they can interfere with the plugin

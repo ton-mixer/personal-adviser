@@ -78,6 +78,4 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  // Add trust host for production
-  // trustHost: true,
 };

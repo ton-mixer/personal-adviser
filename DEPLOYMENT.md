@@ -80,6 +80,18 @@ npm install --save-dev @netlify/plugin-nextjs
 2. Netlify should automatically redeploy
 3. Check the deploy logs for any errors
 
+## Troubleshooting 404 Errors
+
+If you're seeing a 404 error on your base URL, this is likely due to incorrect Netlify configuration:
+
+### 1. Remove Manual Publish Directory
+- **Problem**: Setting `publish = ".next"` interferes with the @netlify/plugin-nextjs plugin
+- **Solution**: Remove the `publish` line from your `netlify.toml` and let the plugin handle it automatically
+
+### 2. Let the Plugin Handle Everything
+- **Problem**: Manual redirects or publish directories conflict with the plugin
+- **Solution**: Use only the plugin configuration without additional redirects
+
 ## Troubleshooting 401 Errors
 
 The 401 Unauthorized error you're experiencing is likely due to one of these issues:
