@@ -79,5 +79,5 @@ export const authOptions: NextAuthOptions = {
     },
   },
   // Add trust host for production
-  trustHost: true,
+  // trustHost: true,
 };
