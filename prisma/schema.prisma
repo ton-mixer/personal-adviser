@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  password      String? // Hashed password
+  accounts      Account[]
+  sessions      Session[]
+  statements    Statement[]
+  categories    Category[]
+  bankAccounts  BankAccount[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- Application Specific Models ---
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CREDIT
+  INVESTMENT
+  OTHER
+}
+
+model BankAccount {
+  id                    String      @id @default(cuid())
+  userId                String
+  name                  String      // Account name (e.g., "Primary Checking")
+  financialInstitution  String      // Name of the bank/financial institution
+  accountType           AccountType @default(OTHER)
+  lastFourDigits        String?     // Last 4 digits of account number for identification
+  balance               Decimal?    @db.Decimal(12, 2) // Current balance (optional)
+  notes                 String?     @db.Text
+  color                 String?     // Optional color for UI customization
+  institutionLogo       String?     // URL to the institution's logo
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  statements   Statement[]   // Many-to-many relationship via an implicit junction table
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, financialInstitution, lastFourDigits]) // No duplicate accounts with same last 4 digits at same institution
+  @@index([userId])
+  @@index([financialInstitution])
+}
+
+enum StatementStatus {
+  UPLOADED
+  PROCESSING
+  REVIEW_NEEDED
+  COMPLETED
+  FAILED
+}
+
+model Statement {
+  id                 String          @id @default(cuid())
+  userId             String
+  filename           String
+  uploadTimestamp    DateTime        @default(now())
+  status             StatementStatus @default(UPLOADED)
+  processedTimestamp DateTime?
+  errorMessage       String?         @db.Text
+  storageUrl         String?         // URL to access file in Supabase storage
+  storageBucket      String?         // Bucket name in Supabase storage
+  storageFilePath    String?         // Path within the bucket
+  periodStart        DateTime?       // Statement period start date
+  periodEnd          DateTime?       // Statement period end date
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accounts     BankAccount[] // Many-to-many relationship via an implicit junction table
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Transaction {
+  id              String    @id @default(cuid())
+  statementId     String
+  transactionDate DateTime?
+  description     String // Raw description from OCR/parsing
+  amount          Decimal   @db.Decimal(10, 2) // PostgreSQL decimal for currency
+  categoryId      String?
+  originalText    String?   @db.Text // Use Text type for longer strings
+  needsReview     Boolean   @default(false)
+
+  statement Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  category  Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([statementId])
+  @@index([categoryId])
+  @@index([transactionDate])
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  userId      String
+  name        String // e.g., "Groceries", "Rent", "Salary"
+  description String? @db.Text
+  color       String? // Store a hex color code for UI
+  icon        String? // Store icon name or reference
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, name]) // User cannot have duplicate category names
+  @@index([userId])
+}
+
+// Model for storing Google Sheets configuration for a user
+model GoogleSheetConfig {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  refreshToken    String?   @db.Text
+  accessToken     String?   @db.Text
+  tokenExpiry     DateTime?
+  spreadsheetId   String?
+  spreadsheetName String?
+  autoExport      Boolean   @default(false)
+  retentionPolicy String? // e.g., "delete_after_export", "keep_forever"
+  lastExported    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+}

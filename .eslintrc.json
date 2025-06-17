@@ -1,0 +1,30 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unused-expressions": [
+      "warn",
+      { "allowShortCircuit": true, "allowTernary": true }
+    ],
+    "no-var": "error",
+    "@next/next/no-img-element": "warn"
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "src/generated/",
+    "prisma/client/",
+    "*.config.js",
+    "*.config.mjs",
+    "next-env.d.ts"
+  ]
+}
