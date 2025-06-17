@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "node scripts/setup-supabase && npm run build"
 
 [functions]
   node_bundler = "esbuild"
